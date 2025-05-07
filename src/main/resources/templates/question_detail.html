@@ -76,7 +76,7 @@
  	}
     
 	function reloadAnswer() {
-		fetch("/answer/list/" + questionId + "?id=" + id.value, { 
+		fetch("/answer/list/[[${question.id}]]?id=" + id.value, { 
 			  method: 'get', 
 			  headers: {
 			    'Content-Type': 'application/json;charset=utf-8'
