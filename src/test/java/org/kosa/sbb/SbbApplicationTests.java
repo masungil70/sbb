@@ -11,6 +11,7 @@ import org.kosa.sbb.answer.Answer;
 import org.kosa.sbb.answer.AnswerRepository;
 import org.kosa.sbb.question.Question;
 import org.kosa.sbb.question.QuestionRepository;
+import org.kosa.sbb.question.QuestionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
@@ -102,13 +103,22 @@ class SbbApplicationTests {
 //			questionRepository.save(q); //이 부분이 등록 또는 수정 구문을 실행하는 것임  
 //		}
 
-		List<Answer> list = answerRepository.findByQuestionIdAndIdGreaterThan(32, 19);
-		for (var item : list) {
-			log.info("answer.id = {}", item.getId());
-		}
-		assertEquals(3, list.size());
+//		List<Answer> list = answerRepository.findByQuestionIdAndIdGreaterThan(32, 19);
+//		for (var item : list) {
+//			log.info("answer.id = {}", item.getId());
+//		}
+//		assertEquals(3, list.size());
 
 	}
 	
+	@Autowired
+	QuestionService questionService;
+	
+	@Test
+	void 질문300건등록() {
+		for (int i=1;i<=300;i++) {
+			questionService.create(String.format("테스트 데이터 입니다:[%3d]", i), "내용 없음");
+		}
+	}
 	
 }

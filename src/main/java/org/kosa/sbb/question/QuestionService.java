@@ -6,6 +6,9 @@ import java.util.Optional;
 
 import org.kosa.sbb.DataNotFountException;
 import org.kosa.sbb.answer.Answer;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import lombok.RequiredArgsConstructor;
@@ -24,6 +27,12 @@ public class QuestionService {
 			throw new DataNotFountException("question nt found");
 		}
 	}
+
+	public Page<Question> getList(int page) {
+		Pageable pageable = PageRequest.of(page, 10);
+		return questionRepository.findAll(pageable);
+	}
+	
 
 	public List<Question> findAll() {
 		return questionRepository.findAll();
