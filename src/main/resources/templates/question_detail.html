@@ -1,0 +1,149 @@
+<html layout:decorate="~{layout}">
+<div layout:fragment="content" class="container my-3">
+    <!-- 질문 -->
+    <h2 class="border-bottom py-2" th:text="${question.subject}"></h2>
+    <div class="card my-3">
+        <div class="card-body">
+            <div class="card-text" style="white-space: pre-line;" th:text="${question.content}"></div>
+            <div class="d-flex justify-content-end">
+                <div class="badge bg-light text-dark p-2 text-start">
+                    <div th:text="${#temporals.format(question.createDate, 'yyyy-MM-dd HH:mm')}"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- 답변의 갯수 표시 -->
+    <h5 class="border-bottom my-3 py-2">
+        <span id="answerCount" th:text="${#lists.size(question.answerList)}"></span>개의 답변이 있습니다.
+    </h5>
+    <!-- 답변 반복 시작 -->
+    <div id="answerListDiv" >
+	    <div class="card my-3" th:each="answer : ${question.answerList}">
+	        <div class="card-body">
+	            <div class="card-text" style="white-space: pre-line;" th:text="${answer.content}"></div>
+	            <div class="d-flex justify-content-end">
+	                <div class="badge bg-light text-dark p-2 text-start">
+	                    <div th:text="${#temporals.format(answer.createDate, 'yyyy-MM-dd HH:mm')}"></div>
+	                </div>
+	            </div>
+	        </div>
+	    </div>
+    </div>
+
+    <!-- 답변 반복 끝  -->
+    <!-- 답변 작성 -->
+    <form id="answerForm" th:action="@{|/answer/create/${question.id}|}" th:object="${answerForm}" method="post" class="my-3">
+	    <div th:replace="~{form_errors :: formErrorsFragment}"></div>
+        <input type="hidden" th:value="${question.maxAnswerId}" id="maxAnswerId"/>
+        <textarea name="content" id="content" rows="10" class="form-control"></textarea>
+        <input type="submit" value="답변등록" class="btn btn-primary my-2">
+    </form>
+    <script type="text/javascript">
+	const answerForm = document.querySelector("#answerForm");   	
+	const questionId = "[[${question.id}]]";
+	const id = document.querySelector("#maxAnswerId");
+	const content = document.querySelector("#content");
+	if (answerForm) {
+ 		//이벤트 핸들러 등록 
+ 		answerForm.addEventListener("submit", e => {
+			e.preventDefault();  // form의 기본 동작을 취소함.
+			
+ 			//form의 하위 객체를 이름을 사용하여 접근 하는 방법
+			const param = {
+				content : content.value   	
+			}
+ 			console.log("param", param);
+			
+			fetch("/answer/create/" + questionId, { 
+				  method: 'post', 
+				  headers: {
+				    'Content-Type': 'application/json;charset=utf-8'
+				  },
+				  body : JSON.stringify(param)
+				})
+				  .then(response => response.json())
+				  .then(json => {
+					  if (json.status == "error") {
+						  alert(json.errorMessage);
+					  } else {
+						  //답변 등록 성공이면 새롭게 추가된 답변 목록을 얻는다   
+						  reloadAnswer();
+					  }
+			})	 			
+
+				  
+ 		})
+ 	}
+    
+	function reloadAnswer() {
+		fetch("/answer/list/" + questionId + "?id=" + id.value, { 
+			  method: 'get', 
+			  headers: {
+			    'Content-Type': 'application/json;charset=utf-8'
+			  }
+			})
+			  .then(response => response.json())
+			  .then(json => {
+				  if (json.status == "error") {
+					  alert(json.errorMessage);
+				  } else {
+					  //답변 목록을 출력한다
+					  const answerList = json.answerList;
+					  const answerCount = document.querySelector("#answerCount");
+					  const answerListDiv = document.querySelector("#answerListDiv");
+					  //건수 변경   
+					  answerCount.innerText = parseInt(answerCount.innerText) + answerList.length;
+					  //답변 목록 추가
+					  let html = "";
+/*					  
+					  for (i=0;i<answerList.length;i++) {
+						  const answer = answerList[i];
+						  html += `<div class="card my-3">
+							           <div class="card-body">
+							             <div class="card-text" style="white-space: pre-line;">${answer.content}</div>
+							             <div class="d-flex justify-content-end">
+							                <div class="badge bg-light text-dark p-2 text-start">
+							                  <div>${dateString(answer.createDate)}</div>
+							                </div>
+							             </div>
+							           </div>
+							        </div>`;
+					  }
+*/
+
+				      answerList.forEach(answer => {
+						  html += `<div class="card my-3">
+					           <div class="card-body">
+					             <div class="card-text" style="white-space: pre-line;">${answer.content}</div>
+					             <div class="d-flex justify-content-end">
+					                <div class="badge bg-light text-dark p-2 text-start">
+					                  <div>${dateString(answer.createDate)}</div>
+					                </div>
+					             </div>
+					           </div>
+					        </div>`;
+				      });
+					  answerListDiv.innerHTML += html;
+					  
+					  //마지막 답변 아이디 값을 변경한다
+					  if (answerList.length > 0) {
+						  //배열의 크기와 색인을 사용하여 마지막 위치 객체 얻는 코드 : 비추천  
+						  //id.value = answerList[answerList.length-1].id;
+
+					  	  //배열의 pop() 함수 사용하여 얻는 방법 : 추천 
+						  id.value = answerList[answerList.length-1].id;
+					  }	
+					  
+					  //입력 양식을 초기화 한다 
+					  answerForm.reset();
+				  }
+		})			
+	} 
+	
+	function dateString(date) {
+		return date.substring(0, 10) + " " + date.substring(11, 16);
+	}
+	
+    </script>
+</div>
+</html>
