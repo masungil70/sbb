@@ -12,6 +12,9 @@ import org.kosa.sbb.answer.AnswerRepository;
 import org.kosa.sbb.question.Question;
 import org.kosa.sbb.question.QuestionRepository;
 import org.kosa.sbb.question.QuestionService;
+import org.kosa.sbb.user.SiteUser;
+import org.kosa.sbb.user.UserRepository;
+import org.kosa.sbb.user.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
@@ -25,13 +28,13 @@ class SbbApplicationTests {
 	void contextLoads() {
 	}
 
-	@Test
-	void testExam() {
-		int a = 10;
-		int b = 20;
-		int sum = add(a, b);
-		assertEquals(30, sum);
-	}
+//	@Test
+//	void testExam() {
+//		int a = 10;
+//		int b = 20;
+//		int sum = add(a, b);
+//		assertEquals(30, sum);
+//	}
 
 	private int add(int a, int b) {
 		return a + b;
@@ -116,9 +119,21 @@ class SbbApplicationTests {
 	
 	@Test
 	void 질문300건등록() {
-		for (int i=1;i<=300;i++) {
-			questionService.create(String.format("테스트 데이터 입니다:[%3d]", i), "내용 없음");
-		}
+//		for (int i=1;i<=300;i++) {
+//			questionService.create(String.format("테스트 데이터 입니다:[%3d]", i), "내용 없음");
+//		}
 	}
 	
+	
+	@Autowired
+	UserService userService;
+	
+	@Test
+	void 회원가입확인() {
+		SiteUser user = userService.create("hong", "hong@kosa.org", "1004");
+		assertNotNull(user);
+		assertNotEquals(0, user.getId());
+		log.info("user.id = "  + user.getId());
+		log.info("user.id = {}" , user.getId());
+	}
 }
