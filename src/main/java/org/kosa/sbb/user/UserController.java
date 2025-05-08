@@ -1,5 +1,6 @@
 package org.kosa.sbb.user;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -33,7 +34,18 @@ public class UserController {
 			return "signup_form";
 		}
 		
-		userService.create(userCreateForm.getUsername(), userCreateForm.getEmail(), userCreateForm.getPassword1());
+		try {
+			userService.create(userCreateForm.getUsername(), userCreateForm.getEmail(), userCreateForm.getPassword1());
+		} catch (DataIntegrityViolationException e) { //중복 예외 처리 
+			log.info(e.getMessage());
+			bindingResult.reject("signupFailed", "이미 등록된 사용자 입니다.");
+			return "signup_form";
+		} catch (Exception e) { //일반적인 예외 처리 
+			log.info(e.getMessage());
+			bindingResult.reject("signupFailed", "이미 등록된 사용자 입니다.");
+			return "signup_form";
+		}
+		
 		return "redirect:/";
 	}
 }
