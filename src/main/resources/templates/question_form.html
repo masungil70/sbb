@@ -1,18 +1,50 @@
-<html layout:decorate="~{layout}">
+<html xmlns="http://www.w3.org/1999/xhtml" 
+	xmlns:th="http://www.thymeleaf.org"
+    xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    layout:decorate="~{layout}">
 <div layout:fragment="content" class="container">
-	<h5 class="my-3 border-bottom pb-2">질문등록</h5>
-	<form th:action="@{/question/create}" th:object="${questionForm}" method="post">
+	<h5 class="my-3 border-bottom pb-2">질문 등록</h5>
+	<form id="questionForm" th:object="${questionForm}" method="post">
+		<input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"></input>
 		<div th:replace="~{form_errors::formErrorsFragment}"></div>
 		<div class="mb-3">
 			<label for="subject" class="form-label">제목</label>
-			<input type="text" th:field="*{subject}" class="form-control">
+			<input type="text" th:field="*{subject}" class="form-control" ></input>
 		</div>
 		<div class="mb-3">
 			<label for="content" class="form-label">내용</label>
 			<textarea th:field="*{content}" class="form-control" rows="10"></textarea>
 		</div>
-		<input type="submit" value="저장하기" class="btn btn-primary my-2">
+		<input type="submit" value="저장하기" class="btn btn-primary my-2" ></input>
 	</form>
+<!--
+작업 순서
+1. form에 submit 이벤트 추가 
+2. fetch() 함수를 사용하여 비동기 통신으로 등록 기능을 실행한다 
+3. QuestionController에 등록 함수를 json 데이터를 받을 수 있게 수정한다 
+ 
+ -->
+<script type="text/javascript">
+	const questionForm = document.querySelector("#questionForm");   	
+	const subject = document.querySelector("#subject");   	
+	const content = document.querySelector("#content");   	
+	if (questionForm) {
+ 		//이벤트 핸들러 등록 
+ 		questionForm.addEventListener("submit", e => {
+			e.preventDefault();  // form의 기본 동작을 취소함.
+			const url = questionForm.action.replace("/question", "/api/question");
+//			alert(url);
+			
+ 			//form의 하위 객체를 이름을 사용하여 접근 하는 방법
+			kosaFetch({url : url
+					   , param : { subject : subject.value, content : content.value }
+					  }
+				, json => location = "/question/list" //성공시 처리함수  
+				, json => alert(json.errorMessage));  //실패시 처리함 수
+
+ 		})
+ 	}
+</script> 	
 </div>
 
 </html>

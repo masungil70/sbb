@@ -1,5 +1,8 @@
 package org.kosa.sbb.user;
 
+import java.util.Optional;
+
+import org.kosa.sbb.DataNotFountException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -26,6 +29,14 @@ public class UserService {
 		userRepository.save(user);
 		
 		return user;
+	}
+	
+	public SiteUser getUser(String username) {
+		Optional<SiteUser> siteUser = userRepository.findByUsername(username);
+		if (siteUser.isPresent()) {
+			return siteUser.get();
+		}
+		throw new DataNotFountException("siteuser not found");
 	}
 	
 }

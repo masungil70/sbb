@@ -12,4 +12,8 @@ public class HelloController {
 		return "Hello world ~~~ ^.^ @@@";
 	}
 
+	@GetMapping("/test") 
+	public String test() {
+		return "test";
+	}
 }

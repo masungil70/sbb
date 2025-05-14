@@ -122,7 +122,7 @@ class SbbApplicationTests {
 	@Test
 	void 질문300건등록() {
 //		for (int i=1;i<=300;i++) {
-//			questionService.create(String.format("테스트 데이터 입니다:[%3d]", i), "내용 없음");
+//			questionService.create(String.format("테스트 데이터 입니다:[%3d]", i), "내용 없음", null);
 //		}
 	}
 	

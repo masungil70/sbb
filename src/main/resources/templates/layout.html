@@ -1,11 +1,15 @@
 <!DOCTYPE html>
-<html>
+<html xmlns="http://www.w3.org/1999/xhtml" 
+	xmlns:th="http://www.thymeleaf.org"
+    xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
 <head>
 	<meta charset="utf-8">
-	<link rel="stylesheet" type="text/css" th:href="@{/bootstrap.min.css}">
+    <meta id="_csrf" name="_csrf" th:content="${_csrf.token}"/>
+    <meta id="_csrf_header" name="_csrf_header" th:content="${_csrf.headerName}"/>	<link rel="stylesheet" type="text/css" th:href="@{/bootstrap.min.css}">
 	<link rel="stylesheet" type="text/css" th:href="@{/style.css}">
 	<title>Hello! sbb </title>
 	<script th:src="@{/bootstrap.min.js}"></script>
+	<script th:src="@{/js/kosaFetch.js}"></script>
 </head>
 <body>
 	<nav th:replace="~{navbar::navbarFragment}"></nav>

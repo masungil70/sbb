@@ -1,15 +1,51 @@
-<html layout:decorate="~{layout}">
+<html xmlns="http://www.w3.org/1999/xhtml" 
+	xmlns:th="http://www.thymeleaf.org"
+    xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    layout:decorate="~{layout}">
+<!--  
+html tag에서 추가 속성을 정의 하는 방법
+ 추가 속성명 : name 
+<a id='obj" data-name="aaa">
+
+html tag에서 추가 속성을 javascript로 읽는 방법 
+ 객체명 -> obj
+ obj.dataset.name = "aaa" 값이 있다 
+ data-  => dataset 으로 변경 
+ -는 ..으로 변경함 
+ 
+
+ -->
 <div layout:fragment="content" class="container my-3">
     <!-- 질문 -->
     <h2 class="border-bottom py-2" th:text="${question.subject}"></h2>
+    <!-- 질문 상세 보기  -->
     <div class="card my-3">
         <div class="card-body">
-            <div class="card-text" style="white-space: pre-line;" th:text="${question.content}"></div>
+            <div class="card-text" style="white-space: pre-line;" th:utext="${@commonUtil.markdown(question.content)}"></div>
             <div class="d-flex justify-content-end">
                 <div class="badge bg-light text-dark p-2 text-start">
-                    <div th:text="${#temporals.format(question.createDate, 'yyyy-MM-dd HH:mm')}"></div>
+                	<div class="mb-2">
+                		<span th:if="${question.author != null}" th:text="${question.author.username}"></span>
+                	</div>
+	                <div th:text="${#temporals.format(question.createDate, 'yyyy-MM-dd HH:mm')}"></div>
                 </div>
             </div>
+	        <!--  로그인 한 사용자가 같을 경우 수정, 삭제 버튼을 출력한다 -->
+	        <div class="my-3">
+	        	<a href="javascript:void(0)" class="recommend btn btn-sm btn-outline-secondary"
+	        	   th:data-uri="@{|/question/vote/${question.id}|}"
+	        	   >추천 <span class="badge rounded-pill bg-success" th:text="${#lists.size(question.voter)}"></span></a>
+	        	<a th:href="@{|/question/modify/${question.id}|}" class="btn btn-sm btn-outline-secondary"
+	        	   sec:authrize="authenticated"
+	        	   th:if="${question.author != null and #authentication.principal.username == question.author.username}"
+	        	   th:text="수정"></a>
+	        	<a href="javascript:void(0)" class="delete btn btn-sm btn-outline-secondary"
+				   th:data-uri="@{|/question/delete/${question.id}|}" 
+	        	   sec:authrize="authenticated"
+	        	   th:if="${question.author != null and #authentication.principal.username == question.author.username}"
+	        	   th:text="삭제"></a>
+	        </div>
+            
         </div>
     </div>
     <!-- 답변의 갯수 표시 -->
@@ -20,12 +56,29 @@
     <div id="answerListDiv" >
 	    <div class="card my-3" th:each="answer : ${question.answerList}">
 	        <div class="card-body">
-	            <div class="card-text" style="white-space: pre-line;" th:text="${answer.content}"></div>
+	            <div class="card-text" style="white-space: pre-line;" th:utext="${@commonUtil.markdown(answer.content)}"></div>
 	            <div class="d-flex justify-content-end">
 	                <div class="badge bg-light text-dark p-2 text-start">
+	                	<div class="mb-2">
+	                		<span th:if="${answer.author != null}" th:text="${answer.author.username}"></span>
+	                	</div>
 	                    <div th:text="${#temporals.format(answer.createDate, 'yyyy-MM-dd HH:mm')}"></div>
 	                </div>
 	            </div>
+	            <div class="my-3">
+		        	<a th:id="|answer_${answer.id}|" href="javascript:void(0)" class="recommend btn btn-sm btn-outline-secondary"
+	        	   		th:data-uri="@{|/answer/vote/${answer.id}|}"
+	        	   	>추천 <span class="badge rounded-pill bg-success" th:text="${#lists.size(answer.voter)}"></span></a>
+					<a th:href="@{|/answer/modify/${answer.id}|}" class="btn btn-sm btn-outline-secondary"
+						sec:authorize="authenticated"
+						th:if="${answer.author != null and #authentication.principal.username == answer.author.username}"
+						th:text="수정"></a>
+					<a href="javascript:void(0);" th:data-uri="@{|/answer/delete/${answer.id}|}"
+						class="delete btn btn-sm btn-outline-secondary" 
+						sec:authorize="authenticated"
+						th:if="${answer.author != null and #authentication.principal.username == answer.author.username}"
+						th:text="삭제"></a>	            
+				</div>
 	        </div>
 	    </div>
     </div>
@@ -35,7 +88,12 @@
     <form id="answerForm" th:action="@{|/answer/create/${question.id}|}" th:object="${answerForm}" method="post" class="my-3">
 	    <div th:replace="~{form_errors :: formErrorsFragment}"></div>
         <input type="hidden" th:value="${question.maxAnswerId}" id="maxAnswerId"/>
-        <textarea name="content" id="content" rows="10" class="form-control"></textarea>
+		<!-- 로그인 하지 않았을 때 편집기  -->        
+        <textarea sec:authorize="isAnonymous()" disabled name="content" id="content" rows="10" class="form-control"></textarea>
+        
+		<!-- 로그인 되었을 때 편집기  -->        
+        <textarea sec:authorize="isAuthenticated()" name="content" id="content" rows="10" class="form-control"></textarea>
+        
         <input type="submit" value="답변등록" class="btn btn-primary my-2">
     </form>
     <script type="text/javascript">
@@ -43,6 +101,42 @@
 	const questionId = "[[${question.id}]]";
 	const id = document.querySelector("#maxAnswerId");
 	const content = document.querySelector("#content");
+/* 	const deleteUrl = document.querySelector(".delete");
+	
+	if (deleteUrl) {
+		deleteUrl.addEventListener("click", e => {
+			e.preventDefault();  // form의 기본 동작을 취소함.
+			if (!confirm("삭제하시겠습니까?")) return false;
+			
+			console.log(e.target.href);
+			fetch(e.target.href, { 
+				  method: 'get', 
+				  headers: {
+				    'Content-Type': 'application/json;charset=utf-8'
+				  }
+			})
+			.then(response => response.json())
+			.then(json => {
+			  	if (json.status == "error") {
+				    alert(json.errorMessage);
+				} else {
+				    //삭제하면 목록으로 이동한다    
+				    alert("삭제하였습니다.");
+				    location = "/question/list";
+				}
+			})
+			.catch(error => {
+				console.log("error", error);
+				if (error.message == `Unexpected token '<', "<!DOCTYPE "... is not valid JSON`) {
+					alert("로그인 후 사용하세요~~~")					;
+					//로그인 페이지로 이동 
+					location = "/user/login";
+				}
+			});			
+			return false;
+		});
+	}
+ */	
 	if (answerForm) {
  		//이벤트 핸들러 등록 
  		answerForm.addEventListener("submit", e => {
@@ -54,39 +148,45 @@
 			}
  			console.log("param", param);
 			
-			fetch("/answer/create/" + questionId, { 
-				  method: 'post', 
-				  headers: {
-				    'Content-Type': 'application/json;charset=utf-8'
-				  },
-				  body : JSON.stringify(param)
-				})
-				  .then(response => response.json())
-				  .then(json => {
-					  if (json.status == "error") {
-						  alert(json.errorMessage);
-					  } else {
-						  //답변 등록 성공이면 새롭게 추가된 답변 목록을 얻는다   
-						  reloadAnswer();
-					  }
-			})	 			
-
-				  
+			kosaFetch({url : "/answer/create/" + questionId
+				   , param : { content : content.value }
+				  }
+			, json => reloadAnswer() //성공시 처리함수  
+			, json => alert(json.errorMessage));  //실패시 처리함 수 
  		})
  	}
     
+ 	//이벤트 핸들러 추가	
+ 	appendEventHandler();
+ 
+	function appendEventHandler() {
+		const delete_elements = document.getElementsByClassName("delete");
+		Array.from(delete_elements).forEach(function (element) {
+			element.addEventListener('click', function () {
+				if (confirm("정말로 삭제하시겠습니까?")) {
+					location.href = this.dataset.uri;
+				};
+			});
+		});
+		
+		//추천 이벤트 핸들러 설정 
+		const recommends = document.querySelectorAll(".recommend");
+		if (recommends) {
+			recommends.forEach(recommend => {
+				recommend.addEventListener("click", e => {
+					e.preventDefault();  // a의 기본 동작을 취소함.
+					if (confirm("정말로 추천하시겠습니까?")) {
+						location.href = e.target.dataset.uri;
+					}
+				});
+			});
+		}
+	}
+	
 	function reloadAnswer() {
-		fetch("/answer/list/[[${question.id}]]?id=" + id.value, { 
-			  method: 'get', 
-			  headers: {
-			    'Content-Type': 'application/json;charset=utf-8'
-			  }
-			})
-			  .then(response => response.json())
-			  .then(json => {
-				  if (json.status == "error") {
-					  alert(json.errorMessage);
-				  } else {
+		kosaFetch({url : "/answer/list/[[${question.id}]]?id=" + id.value, 
+			  	   method: 'get'} 
+				, json => { 
 					  //답변 목록을 출력한다
 					  const answerList = json.answerList;
 					  const answerCount = document.querySelector("#answerCount");
@@ -112,6 +212,8 @@
 */
 
 				      answerList.forEach(answer => {
+				    	  const username = '[[${#authentication.principal.username}]]';
+				    	  
 						  html += `<div class="card my-3">
 					           <div class="card-body">
 					             <div class="card-text" style="white-space: pre-line;">${answer.content}</div>
@@ -120,10 +222,22 @@
 					                  <div>${dateString(answer.createDate)}</div>
 					                </div>
 					             </div>
+						         <div class="my-3">
+						        	<a href="javascript:void(0)" class="recommend btn btn-sm btn-outline-secondary"
+					        	   		data-uri="/answer/vote/${answer.id}"
+					        	   	>추천 <span class="badge rounded-pill bg-success" >${answer.voterSize}</span></a>`
+					        	   	
+						  if (username == answer.author) {						        	   	
+							  html += `<a href="/answer/modify/${answer.id}" class="btn btn-sm btn-outline-secondary">수정</a>`;
+							  html += `<a href="javascript:void()" data-uri="/answer/delete/${answer.id}" class="delete btn btn-sm btn-outline-secondary">삭제</a>`;
+						  }
+						  html += `		</div>					             
 					           </div>
 					        </div>`;
 				      });
 					  answerListDiv.innerHTML += html;
+					  
+					  appendEventHandler();
 					  
 					  //마지막 답변 아이디 값을 변경한다
 					  if (answerList.length > 0) {
@@ -136,13 +250,14 @@
 					  
 					  //입력 양식을 초기화 한다 
 					  answerForm.reset();
-				  }
-		})			
+			}
+			, json => alert(json.errorMessage));
 	} 
 	
 	function dateString(date) {
 		return date.substring(0, 10) + " " + date.substring(11, 16);
 	}
+	
 	
     </script>
 </div>

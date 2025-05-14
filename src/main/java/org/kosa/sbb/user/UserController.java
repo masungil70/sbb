@@ -11,12 +11,22 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+
+
+
+
 @Controller
 @RequiredArgsConstructor
 @RequestMapping("/user")
 @Slf4j
 public class UserController {
 	private final UserService userService;
+	
+	@GetMapping("login")
+	public String login() {
+		return "login_form";
+	}
+	
 	
 	@GetMapping("signup") 
 	public String singup(UserCreateForm userCreateForm) {
