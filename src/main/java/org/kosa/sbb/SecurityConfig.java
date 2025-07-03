@@ -43,27 +43,34 @@ public class SecurityConfig {
 
 	@Bean
 	SecurityFilterChain filterChild(HttpSecurity http) throws Exception {
-		http.authorizeHttpRequests(authorizeHttpRequests ->
-		                                               // /** -> 루트 경로 이하 모두 허가함 
-			      authorizeHttpRequests.requestMatchers(new AntPathRequestMatcher("/**")).permitAll())
-//			.csrf(csrf -> csrf.ignoringRequestMatchers(new AntPathRequestMatcher("/**")))
-			.formLogin(formLogin -> formLogin.loginPage("/user/login")
-					                         .defaultSuccessUrl("/"))
-			.logout(logout -> logout.logoutRequestMatcher(new AntPathRequestMatcher("/user/logout"))
-                .logoutSuccessUrl("/")
-                .invalidateHttpSession(true));
-		
+		http
+				.authorizeHttpRequests(auth -> auth
+						.requestMatchers("/**").permitAll() // 🔧 잘못된 부분 수정
+				)
+				.csrf(csrf -> csrf
+						.ignoringRequestMatchers(new AntPathRequestMatcher("/imageUpload")) // ⚠ 전체 제외는 주의
+				)
+				.formLogin(form -> form
+						.loginPage("/user/login")
+						.defaultSuccessUrl("/")
+						.permitAll())
+				.logout(logout -> logout
+						.logoutRequestMatcher(new AntPathRequestMatcher("/user/logout"))
+						.logoutSuccessUrl("/")
+						.invalidateHttpSession(true));
+
 		return http.build();
 	}
-	
-	//UserService.passwordEncoder = PasswordEncoder passwordEncoder()이 설정됨   
+
+	// UserService.passwordEncoder = PasswordEncoder passwordEncoder()이 설정됨
 	@Bean
 	PasswordEncoder passwordEncoder() {
 		return new BCryptPasswordEncoder();
 	}
-	
-//	@Bean
-//	AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception{
-//		return authenticationConfiguration.getAuthenticationManager();
-//	}
+
+	// @Bean
+	// AuthenticationManager authenticationManager(AuthenticationConfiguration
+	// authenticationConfiguration) throws Exception{
+	// return authenticationConfiguration.getAuthenticationManager();
+	// }
 }

@@ -10,6 +10,20 @@
 	<title>Hello! sbb </title>
 	<script th:src="@{/bootstrap.min.js}"></script>
 	<script th:src="@{/js/kosaFetch.js}"></script>
+	<!-- ckeditor5 관련 자바 스크립트 -->
+	<script src="https://cdn.ckeditor.com/ckeditor5/12.4.0/classic/ckeditor.js"></script>
+	<script src="https://ckeditor.com/apps/ckfinder/3.5.0/ckfinder.js"></script>
+
+	<style>
+		.ck.ck-editor {
+			margin: 0 auto;
+		}
+		
+		.ck-editor__editable {
+			height: 80vh;
+		}
+		</style>
+
 </head>
 <body>
 	<nav th:replace="~{navbar::navbarFragment}"></nav>

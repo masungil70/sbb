@@ -1,5 +1,6 @@
 package org.kosa.sbb.question;
 
+import java.io.IOException;
 import java.security.Principal;
 import java.util.HashMap;
 import java.util.Map;
@@ -21,11 +22,15 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.server.ResponseStatusException;
 
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import org.kosa.sbb.file.FileTokenService;
+import org.kosa.sbb.file.FileUploadService;
 
 /*
  * 80% spring boot 제공하는 클래스 
@@ -44,30 +49,29 @@ import lombok.extern.slf4j.Slf4j;
 @RequestMapping("/question")
 @Slf4j
 public class QuestionController {
-	
+
 	private final QuestionService questionService;
 	private final UserService userService;
-
+	private final FileTokenService fileTokenService;
+	
 	@GetMapping("/list")
-	public String list(Model model 
-			, @RequestParam(value="page", defaultValue = "0") int page
-			, @RequestParam(value="kw", defaultValue = "") String kw
-			) {
-//		Page<Question> paging = questionService.getList(page);
-//		model.addAttribute("paging", paging);
-//		
-//		int startPage = ((page) / 10) * 10;
-//		int endPage = ((page) / 10) * 10 + 9;
-//		if (endPage > paging.getTotalPages()) endPage = paging.getTotalPages();
-//		model.addAttribute("startPage", startPage);
-//		model.addAttribute("endPage", endPage);
-		
+	public String list(Model model, @RequestParam(value = "page", defaultValue = "0") int page,
+			@RequestParam(value = "kw", defaultValue = "") String kw) {
+		// Page<Question> paging = questionService.getList(page);
+		// model.addAttribute("paging", paging);
+		//
+		// int startPage = ((page) / 10) * 10;
+		// int endPage = ((page) / 10) * 10 + 9;
+		// if (endPage > paging.getTotalPages()) endPage = paging.getTotalPages();
+		// model.addAttribute("startPage", startPage);
+		// model.addAttribute("endPage", endPage);
+
 		model.addAttribute("paging", questionService.getList(page, kw));
 		model.addAttribute("kw", kw);
-		
+
 		return "question_list";
 	}
-	
+
 	@PreAuthorize("isAuthenticated")
 	@GetMapping("/detail/{id}")
 	public String detail(Model model, @PathVariable("id") Integer id, AnswerForm answerForm) {
@@ -75,68 +79,67 @@ public class QuestionController {
 		model.addAttribute("question", question);
 		return "question_detail";
 	}
-	
+
 	@PreAuthorize("isAuthenticated")
 	@GetMapping("/create")
-	public String create(QuestionForm questionForm) {
+	public String create(QuestionForm questionForm, Model model) {
+		final String token = fileTokenService.getToken();
+		log.debug("token = ", token);
+		model.addAttribute("token", token);
+
 		return "question_form";
 	}
 
-	
-		
 	@PreAuthorize("isAuthenticated")
 	@GetMapping("/modify/{id}")
-	public String modify(QuestionForm questionForm
-			, @PathVariable("id") Integer id
-			, Principal principal /*로그인한 사용자 정보 객체*/) {
-		//1. 질문 아이디로 질문 객체를 얻는다
+	public String modify(QuestionForm questionForm, @PathVariable("id") Integer id, Principal principal /*
+																										 */) {
+		// 1. 질문 아이디로 질문 객체를 얻는다
 		Question question = questionService.getQuestion(id);
-		
-		//2. 질문작성자와 로그인한 사용자가 같지 않으면 권한 예외 발생하고 끝
+
+		// 2. 질문작성자와 로그인한 사용자가 같지 않으면 권한 예외 발생하고 끝
 		if (!question.getAuthor().getUsername().equals(principal.getName())) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "수정 권한이 없습니다.");
 		}
-		//3. 디비에서 얻는 질문의 상세 정보를 화면 출력 할 수 있게 설정한다
+		// 3. 디비에서 얻는 질문의 상세 정보를 화면 출력 할 수 있게 설정한다
 		questionForm.setContent(question.getContent());
 		questionForm.setSubject(question.getSubject());
-		
+
 		return "question_form";
 	}
-	
+
 	@PreAuthorize("isAuthenticated")
 	@GetMapping("/delete/{id}")
-//	@ResponseBody
-//	public Map<String, Object> delete(Principal principal /*로그인한 사용자 정보 객체*/
-	public String delete(Principal principal /*로그인한 사용자 정보 객체*/
-			, @PathVariable("id") Integer id /*경로를 사용하여 전달된 질문 아이디*/) {
+	// @ResponseBody
+	// public Map<String, Object> delete(Principal principal /*로그인한 사용자 정보 객체*/
+	public String delete(Principal principal /* 로그인한 사용자 정보 객체 */
+			, @PathVariable("id") Integer id /* 경로를 사용하여 전달된 질문 아이디 */) {
 		Map<String, Object> result = new HashMap<String, Object>();
-		//1. 질문 아이디를 이용하여 상세 정보를 얻는다
+		// 1. 질문 아이디를 이용하여 상세 정보를 얻는다
 		Question question = questionService.getQuestion(id);
-		//2. 질문작성자와 로그인한 사용자가 같지 않으면 권한 예외 발생하고 끝
+		// 2. 질문작성자와 로그인한 사용자가 같지 않으면 권한 예외 발생하고 끝
 		if (!question.getAuthor().getUsername().equals(principal.getName())) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "수정 권한이 없습니다.");
 		}
-		//3. 질문 정보를 수정한다 
+		// 3. 질문 정보를 수정한다
 		questionService.delete(question);
 
-//		result.put("status", "ok");
-//		return result;
+		// result.put("status", "ok");
+		// return result;
 		return "redirect:/question/list";
 	}
-	
+
 	@PreAuthorize("isAuthenticated")
 	@GetMapping("/vote/{id}")
-	public String questionVote(Model model
-			, @PathVariable("id") Integer id /*질문 아이디*/
-			, Principal principal /*로그인한 사용자 정보 객체*/ ) {
+	public String questionVote(Model model, @PathVariable("id") Integer id /* 질문 아이디 */
+			, Principal principal /* 로그인한 사용자 정보 객체 */ ) {
 		Question question = questionService.getQuestion(id); /* 질문 아이디를 이용하여 질문 객체 얻기 */
-		//로그인 사용한 정보 얻기 
+		// 로그인 사용한 정보 얻기
 		SiteUser siteUser = userService.getUser(principal.getName());
-		//추천인 추가 
+		// 추천인 추가
 		questionService.vote(question, siteUser);
-		
-		return "redirect:/question/detail/" + id; //상세보기로 이동한다 
+
+		return "redirect:/question/detail/" + id; // 상세보기로 이동한다
 	}
-	
 
 }

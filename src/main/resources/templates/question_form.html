@@ -13,7 +13,7 @@
 		</div>
 		<div class="mb-3">
 			<label for="content" class="form-label">내용</label>
-			<textarea th:field="*{content}" class="form-control" rows="10"></textarea>
+			<textarea th:field="*{content}" class="form-control" rows="20"></textarea>
 		</div>
 		<input type="submit" value="저장하기" class="btn btn-primary my-2" ></input>
 	</form>
@@ -24,7 +24,24 @@
 3. QuestionController에 등록 함수를 json 데이터를 받을 수 있게 수정한다 
  
  -->
-<script type="text/javascript">
+<script type="text/javascript" th:inline="javascript">
+	let token = [[${token}]];
+	let editor;
+	ClassicEditor
+	.create(document.querySelector('#content'),{
+		ckfinder: {
+			uploadUrl : '/imageUpload?token=' + token
+		}
+	})
+	.then(editor => {
+		console.log('Editor was initialized');
+		window.editor = editor;
+	})
+	.catch(error => {
+		console.error(error);
+	});
+	
+	
 	const questionForm = document.querySelector("#questionForm");   	
 	const subject = document.querySelector("#subject");   	
 	const content = document.querySelector("#content");   	
